@@ -152,9 +152,14 @@ class G1AmpEnvCfg(LocomotionAmpEnvCfg):
             LEGGED_LAB_ROOT_DIR, "data", "MotionData", "g1_29dof", "amp", "model_walk"
         )
         self.motion_data.motion_dataset.motion_data_weights = {
-            # "B1_-_stand_to_walk_stageii": 1.0,
-            # "B2_-_walk_to_stand_stageii": 1.0,
             "B3_-_walk1_stageii": 1.0,
+            "B5_-_walk_backwards_stageii": 1.0,
+            "B9_-_walk_turn_left_90_stageii": 1.0,
+            "B10_-_walk_turn_left_45_stageii": 1.0,
+            "B11_-_walk_turn_left_135_stageii": 1.0,
+            "B12_-_walk_turn_right_90_stageii": 1.0,
+            "B13_-_walk_turn_right_45_stageii": 1.0,
+            "B14_-_walk_turn_right_135_stageii": 1.0,
         }
 
 
@@ -212,11 +217,10 @@ class G1AmpEnvCfg(LocomotionAmpEnvCfg):
         # self.commands.base_velocity.ranges.lin_vel_x = (-0.5, 3.0)
         # self.commands.base_velocity.ranges.lin_vel_y = (-0.5, 0.5)
         # self.commands.base_velocity.ranges.ang_vel_z = (-1.0, 1.0)
-        # self.commands.base_velocity.ranges.heading = (-math.pi, math.pi)
-        self.commands.base_velocity.ranges.lin_vel_x = (0.3, 0.8)
-        self.commands.base_velocity.ranges.lin_vel_y = (0.0, 0.0)
-        self.commands.base_velocity.ranges.ang_vel_z = (0.0, 0.0)
-        self.commands.base_velocity.ranges.heading = (0.0, 0.0)
+        self.commands.base_velocity.ranges.lin_vel_x = (-0.5, 1.0)
+        self.commands.base_velocity.ranges.lin_vel_y = (-0.5, 0.5)
+        self.commands.base_velocity.ranges.ang_vel_z = (-1.0, 1.0)
+        self.commands.base_velocity.ranges.heading = (-math.pi, math.pi)
 
         # ------------------------------------------------------
         # Curriculum
@@ -241,9 +245,9 @@ class G1AmpEnvCfg_PLAY(G1AmpEnvCfg):
         # self.commands.base_velocity.ranges.lin_vel_x = (0.5, 3.0)
         # self.commands.base_velocity.ranges.lin_vel_y = (-0.5, 0.5)
         # self.commands.base_velocity.ranges.ang_vel_z = (-1.0, 1.0)
-        self.commands.base_velocity.ranges.lin_vel_x = (0.3, 0.8)
-        self.commands.base_velocity.ranges.lin_vel_y = (0.0, 0.0)
-        self.commands.base_velocity.ranges.ang_vel_z = (0.0, 0.0)
+        self.commands.base_velocity.ranges.lin_vel_x = (-0.5, 1.0)
+        self.commands.base_velocity.ranges.lin_vel_y = (-0.5, 0.5)
+        self.commands.base_velocity.ranges.ang_vel_z = (-1.0, 1.0)
         self.commands.base_velocity.ranges.heading = (0.0, 0.0)
 
         self.events.reset_from_ref = None
