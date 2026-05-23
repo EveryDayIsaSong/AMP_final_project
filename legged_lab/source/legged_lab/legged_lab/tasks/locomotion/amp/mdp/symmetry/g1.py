@@ -95,12 +95,12 @@ def _transform_policy_obs_left_right(env: ManagerBasedRLEnv, obs: torch.Tensor) 
     # [(15,), (15,), (15,), (145,), (145,), (145,)]
     HISTORY_LEN = 5
     ANG_VEL_DIM = 3
-    ROT_TAN_NORM = 6
+    PROJECTED_GRAVITY_DIM = 3  # was ROT_TAN_NORM = 6 for root_local_rot_tan_norm
     VEL_CMD_DIM = 3
     JOINT_POS_DIM = joint_num
     JOINT_VEL_DIM = joint_num
     LAST_ACTIONS_DIM = joint_num
-    KEY_BODY_POS_DIM = key_body_num * 3
+    # KEY_BODY_POS_DIM = key_body_num * 3  # policy obs no longer has key_body_pos_b
 
     end_idx = 0
     # ang vel
@@ -108,11 +108,11 @@ def _transform_policy_obs_left_right(env: ManagerBasedRLEnv, obs: torch.Tensor) 
         start_idx = end_idx
         end_idx = start_idx + ANG_VEL_DIM
         obs[:, start_idx:end_idx] = obs[:, start_idx:end_idx] * torch.tensor([-1, 1, -1], device=device)
-    # root rot tan norm
+    # projected gravity (was root_local_rot_tan_norm with 6 dims)
     for h in range(HISTORY_LEN):
         start_idx = end_idx
-        end_idx = start_idx + ROT_TAN_NORM
-        obs[:, start_idx:end_idx] = obs[:, start_idx:end_idx] * torch.tensor([1, -1, 1, 1, -1, 1], device=device)
+        end_idx = start_idx + PROJECTED_GRAVITY_DIM
+        obs[:, start_idx:end_idx] = obs[:, start_idx:end_idx] * torch.tensor([1, -1, 1], device=device)
     # velocity command
     for h in range(HISTORY_LEN):
         start_idx = end_idx
@@ -133,11 +133,7 @@ def _transform_policy_obs_left_right(env: ManagerBasedRLEnv, obs: torch.Tensor) 
         start_idx = end_idx
         end_idx = start_idx + LAST_ACTIONS_DIM
         obs[:, start_idx:end_idx] = _switch_g1_29dof_joints_left_right(obs[:, start_idx:end_idx])
-    # key body pos
-    for h in range(HISTORY_LEN):
-        start_idx = end_idx
-        end_idx = start_idx + KEY_BODY_POS_DIM
-        obs[:, start_idx:end_idx] = _switch_g1_29dof_key_body_pos_left_right(obs[:, start_idx:end_idx])
+    # key body pos (removed - policy obs no longer has key_body_pos_b)
 
     return obs
 
