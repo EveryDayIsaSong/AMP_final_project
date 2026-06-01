@@ -6,6 +6,7 @@ from isaaclab.managers import SceneEntityCfg
 from isaaclab.utils import configclass
 
 import legged_lab.tasks.locomotion.amp.mdp as mdp
+import legged_lab.tasks.locomotion.velocity.mdp as velocity_mdp  # [MODIFIED] 策略A配置：yaw_frame reward
 from legged_lab import LEGGED_LAB_ROOT_DIR
 
 ##
@@ -32,11 +33,16 @@ class G1AmpRewards:
     """Reward terms for the MDP."""
 
     # -- task
+    # [MODIFIED] 策略A配置：yaw_frame/world_exp（来自env.yaml）
     track_lin_vel_xy_exp = RewTerm(
-        func=mdp.track_lin_vel_xy_exp, weight=1.0, params={"command_name": "base_velocity", "std": math.sqrt(0.25)}
+        func=velocity_mdp.track_lin_vel_xy_yaw_frame_exp,
+        weight=1.0,
+        params={"command_name": "base_velocity", "std": math.sqrt(0.25)},
     )
     track_ang_vel_z_exp = RewTerm(
-        func=mdp.track_ang_vel_z_exp, weight=1.0, params={"command_name": "base_velocity", "std": math.sqrt(0.25)}
+        func=velocity_mdp.track_ang_vel_z_world_exp,
+        weight=1.0,
+        params={"command_name": "base_velocity", "std": math.sqrt(0.25)},
     )
 
     # -- penalties
@@ -220,7 +226,7 @@ class G1AmpEnvCfg(LocomotionAmpEnvCfg):
         self.commands.base_velocity.ranges.lin_vel_x = (-0.5, 1.0)
         self.commands.base_velocity.ranges.lin_vel_y = (-0.5, 0.5)
         self.commands.base_velocity.ranges.ang_vel_z = (-1.0, 1.0)
-        self.commands.base_velocity.ranges.heading = (-math.pi, math.pi)
+        # self.commands.base_velocity.ranges.heading = (-math.pi, math.pi)  # [MODIFIED] disabled: heading_command disabled
 
         # ------------------------------------------------------
         # Curriculum
@@ -248,6 +254,6 @@ class G1AmpEnvCfg_PLAY(G1AmpEnvCfg):
         self.commands.base_velocity.ranges.lin_vel_x = (-0.5, 1.0)
         self.commands.base_velocity.ranges.lin_vel_y = (-0.5, 0.5)
         self.commands.base_velocity.ranges.ang_vel_z = (-1.0, 1.0)
-        self.commands.base_velocity.ranges.heading = (0.0, 0.0)
+        # self.commands.base_velocity.ranges.heading = (0.0, 0.0)  # [MODIFIED] disabled: heading_command disabled
 
         self.events.reset_from_ref = None

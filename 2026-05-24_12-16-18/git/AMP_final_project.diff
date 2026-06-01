@@ -1,0 +1,261 @@
+--- git status ---
+On branch main
+Your branch is ahead of 'origin/main' by 3 commits.
+  (use "git push" to publish your local commits)
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   amp2/legged_lab/source/legged_lab/legged_lab/assets/unitree.py
+	modified:   amp2/legged_lab/source/legged_lab/legged_lab/data/Robots/Unitree/g1_29dof/usd/g1_29dof_rev_1_0/configuration/g1_29dof_rev_1_0_base.usd
+	modified:   amp2/legged_lab/source/legged_lab/legged_lab/tasks/locomotion/amp/amp_env_cfg.py
+	modified:   amp2/legged_lab/source/legged_lab/legged_lab/tasks/locomotion/amp/config/g1/g1_amp_env_cfg.py
+	modified:   amp2/legged_lab/source/legged_lab/legged_lab/tasks/locomotion/amp/mdp/symmetry/g1.py
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	amp2/legged_lab/source/legged_lab/legged_lab/data/MotionData/g1_29dof/amp/model_walk/B10_-_walk_turn_left_45_stageii.pkl
+	amp2/legged_lab/source/legged_lab/legged_lab/data/MotionData/g1_29dof/amp/model_walk/B11_-_walk_turn_left_135_stageii.pkl
+	amp2/legged_lab/source/legged_lab/legged_lab/data/MotionData/g1_29dof/amp/model_walk/B12_-_walk_turn_right_90_stageii.pkl
+	amp2/legged_lab/source/legged_lab/legged_lab/data/MotionData/g1_29dof/amp/model_walk/B13_-_walk_turn_right_45_stageii.pkl
+	amp2/legged_lab/source/legged_lab/legged_lab/data/MotionData/g1_29dof/amp/model_walk/B14_-_walk_turn_right_135_stageii.pkl
+	amp2/legged_lab/source/legged_lab/legged_lab/data/MotionData/g1_29dof/amp/model_walk/B5_-_walk_backwards_stageii.pkl
+	amp2/legged_lab/source/legged_lab/legged_lab/data/MotionData/g1_29dof/amp/model_walk/B9_-_walk_turn_left_90_stageii.pkl
+
+no changes added to commit (use "git add" and/or "git commit -a") 
+
+
+--- git diff ---
+diff --git a/amp2/legged_lab/source/legged_lab/legged_lab/assets/unitree.py b/amp2/legged_lab/source/legged_lab/legged_lab/assets/unitree.py
+index 40f8099..fe2f4e6 100755
+--- a/amp2/legged_lab/source/legged_lab/legged_lab/assets/unitree.py
++++ b/amp2/legged_lab/source/legged_lab/legged_lab/assets/unitree.py
+@@ -145,11 +145,19 @@ UNITREE_G1_29DOF_CFG = UnitreeArticulationCfg(
+             ],
+             effort_limit_sim=25,
+             velocity_limit_sim=37,
+-            stiffness=40.0,
++            # [MODIFIED] waist_roll/pitch stiffness 40→200, arm damping 1→10 to match deploy.yaml
++            stiffness={
++                ".*_shoulder_.*": 40.0,
++                ".*_elbow_.*": 40.0,
++                ".*_wrist_roll.*": 40.0,
++                ".*_ankle_.*": 40.0,
++                "waist_roll_joint": 200.0,
++                "waist_pitch_joint": 200.0,
++            },
+             damping={
+-                ".*_shoulder_.*": 1.0,
+-                ".*_elbow_.*": 1.0,
+-                ".*_wrist_roll.*": 1.0,
++                ".*_shoulder_.*": 10.0,
++                ".*_elbow_.*": 10.0,
++                ".*_wrist_roll.*": 10.0,
+                 ".*_ankle_.*": 2.0,
+                 "waist_.*_joint": 5.0,
+             },
+@@ -160,7 +168,7 @@ UNITREE_G1_29DOF_CFG = UnitreeArticulationCfg(
+             effort_limit_sim=5,
+             velocity_limit_sim=22,
+             stiffness=40.0,
+-            damping=1.0,
++            damping=10.0,  # [MODIFIED] 1→10 to match deploy.yaml
+             armature=0.01,
+         ),
+     },
+diff --git a/amp2/legged_lab/source/legged_lab/legged_lab/data/Robots/Unitree/g1_29dof/usd/g1_29dof_rev_1_0/configuration/g1_29dof_rev_1_0_base.usd b/amp2/legged_lab/source/legged_lab/legged_lab/data/Robots/Unitree/g1_29dof/usd/g1_29dof_rev_1_0/configuration/g1_29dof_rev_1_0_base.usd
+old mode 100644
+new mode 100755
+diff --git a/amp2/legged_lab/source/legged_lab/legged_lab/tasks/locomotion/amp/amp_env_cfg.py b/amp2/legged_lab/source/legged_lab/legged_lab/tasks/locomotion/amp/amp_env_cfg.py
+index 777814b..02c0dbd 100755
+--- a/amp2/legged_lab/source/legged_lab/legged_lab/tasks/locomotion/amp/amp_env_cfg.py
++++ b/amp2/legged_lab/source/legged_lab/legged_lab/tasks/locomotion/amp/amp_env_cfg.py
+@@ -75,12 +75,12 @@ class CommandsCfg:
+         asset_name="robot",
+         resampling_time_range=(10.0, 10.0),
+         rel_standing_envs=0.02,
+-        rel_heading_envs=1.0,
+-        heading_command=True,
+-        heading_control_stiffness=0.5,
++        rel_heading_envs=0.0,  # [MODIFIED] 1.0→0.0: deploy sends ang_vel_z, not heading angle
++        # heading_command=True,  # [MODIFIED] disabled: deploy uses ang_vel_z, not heading angle
++        # heading_control_stiffness=0.5,
+         debug_vis=True,
+         ranges=mdp.UniformVelocityCommandCfg.Ranges(
+-            lin_vel_x=(-0.1, 0.1), lin_vel_y=(-0.1, 0.1), ang_vel_z=(-0.1, 0.1), heading=(-math.pi, math.pi)
++            lin_vel_x=(-0.1, 0.1), lin_vel_y=(-0.1, 0.1), ang_vel_z=(-0.1, 0.1)  # [MODIFIED] removed heading range
+         ),
+     )
+ 
+@@ -110,12 +110,16 @@ class ObservationsCfg:
+         # joint_vel = ObsTerm(func=mdp.joint_vel_rel, noise=Unoise(n_min=-1.5, n_max=1.5))
+         # actions = ObsTerm(func=mdp.last_action)
+ 
+-        base_ang_vel = ObsTerm(func=mdp.base_ang_vel, noise=Unoise(n_min=-0.2, n_max=0.2))
+-        root_local_rot_tan_norm = ObsTerm(func=mdp.root_local_rot_tan_norm, noise=Unoise(n_min=-0.05, n_max=0.05))
++        base_ang_vel = ObsTerm(func=mdp.base_ang_vel, scale=0.2, noise=Unoise(n_min=-0.2, n_max=0.2))
++        # root_local_rot_tan_norm = ObsTerm(func=mdp.root_local_rot_tan_norm, noise=Unoise(n_min=-0.05, n_max=0.05))
++        projected_gravity = ObsTerm(func=mdp.projected_gravity, noise=Unoise(n_min=-0.05, n_max=0.05))
+         velocity_commands = ObsTerm(func=mdp.generated_commands, params={"command_name": "base_velocity"})
+-        joint_pos = ObsTerm(func=mdp.joint_pos, noise=Unoise(n_min=-0.01, n_max=0.01))
+-        joint_vel = ObsTerm(func=mdp.joint_vel, noise=Unoise(n_min=-1.5, n_max=1.5))
+-        actions = ObsTerm(func=mdp.last_action)
++        # joint_pos = ObsTerm(func=mdp.joint_pos, noise=Unoise(n_min=-0.01, n_max=0.01))
++        joint_pos_rel = ObsTerm(func=mdp.joint_pos_rel, noise=Unoise(n_min=-0.01, n_max=0.01))
++        # joint_vel = ObsTerm(func=mdp.joint_vel, noise=Unoise(n_min=-1.5, n_max=1.5))
++        joint_vel_rel = ObsTerm(func=mdp.joint_vel_rel, scale=0.05, noise=Unoise(n_min=-1.5, n_max=1.5))
++        # actions = ObsTerm(func=mdp.last_action)
++        last_action = ObsTerm(func=mdp.last_action)
+         # key_body_pos_b = ObsTerm(
+         #     func=mdp.key_body_pos_b,
+         #     params=MISSING,
+@@ -137,12 +141,16 @@ class ObservationsCfg:
+ 
+         # observation terms (order preserved)
+         base_lin_vel = ObsTerm(func=mdp.base_lin_vel)
+-        base_ang_vel = ObsTerm(func=mdp.base_ang_vel)
+-        root_local_rot_tan_norm = ObsTerm(func=mdp.root_local_rot_tan_norm)
++        base_ang_vel = ObsTerm(func=mdp.base_ang_vel, scale=0.2)
++        # root_local_rot_tan_norm = ObsTerm(func=mdp.root_local_rot_tan_norm)
++        projected_gravity = ObsTerm(func=mdp.projected_gravity)
+         velocity_commands = ObsTerm(func=mdp.generated_commands, params={"command_name": "base_velocity"})
+-        joint_pos = ObsTerm(func=mdp.joint_pos)
+-        joint_vel = ObsTerm(func=mdp.joint_vel)
+-        actions = ObsTerm(func=mdp.last_action)
++        # joint_pos = ObsTerm(func=mdp.joint_pos)
++        joint_pos_rel = ObsTerm(func=mdp.joint_pos_rel)
++        # joint_vel = ObsTerm(func=mdp.joint_vel)
++        joint_vel_rel = ObsTerm(func=mdp.joint_vel_rel, scale=0.05)
++        # actions = ObsTerm(func=mdp.last_action)
++        last_action = ObsTerm(func=mdp.last_action)
+         key_body_pos_b = ObsTerm(
+             func=mdp.key_body_pos_b,
+             params=MISSING,
+diff --git a/amp2/legged_lab/source/legged_lab/legged_lab/tasks/locomotion/amp/config/g1/g1_amp_env_cfg.py b/amp2/legged_lab/source/legged_lab/legged_lab/tasks/locomotion/amp/config/g1/g1_amp_env_cfg.py
+index fec2204..7084fb7 100755
+--- a/amp2/legged_lab/source/legged_lab/legged_lab/tasks/locomotion/amp/config/g1/g1_amp_env_cfg.py
++++ b/amp2/legged_lab/source/legged_lab/legged_lab/tasks/locomotion/amp/config/g1/g1_amp_env_cfg.py
+@@ -6,6 +6,7 @@ from isaaclab.managers import SceneEntityCfg
+ from isaaclab.utils import configclass
+ 
+ import legged_lab.tasks.locomotion.amp.mdp as mdp
++import legged_lab.tasks.locomotion.velocity.mdp as velocity_mdp  # [MODIFIED] added for yaw_frame reward functions
+ from legged_lab import LEGGED_LAB_ROOT_DIR
+ 
+ ##
+@@ -32,11 +33,17 @@ class G1AmpRewards:
+     """Reward terms for the MDP."""
+ 
+     # -- task
++    # [MODIFIED] reward functions changed from mdp.track_lin_vel_xy_exp to yaw_frame_exp
++    #            and from mdp.track_ang_vel_z_exp to world_exp, to match RL velocity config
+     track_lin_vel_xy_exp = RewTerm(
+-        func=mdp.track_lin_vel_xy_exp, weight=1.0, params={"command_name": "base_velocity", "std": math.sqrt(0.25)}
++        func=velocity_mdp.track_lin_vel_xy_yaw_frame_exp,
++        weight=1.0,
++        params={"command_name": "base_velocity", "std": math.sqrt(0.25)},
+     )
+     track_ang_vel_z_exp = RewTerm(
+-        func=mdp.track_ang_vel_z_exp, weight=1.0, params={"command_name": "base_velocity", "std": math.sqrt(0.25)}
++        func=velocity_mdp.track_ang_vel_z_world_exp,
++        weight=1.0,
++        params={"command_name": "base_velocity", "std": math.sqrt(0.25)},
+     )
+ 
+     # -- penalties
+@@ -152,9 +159,14 @@ class G1AmpEnvCfg(LocomotionAmpEnvCfg):
+             LEGGED_LAB_ROOT_DIR, "data", "MotionData", "g1_29dof", "amp", "model_walk"
+         )
+         self.motion_data.motion_dataset.motion_data_weights = {
+-            "B1_-_stand_to_walk_stageii": 1.0,
+-            "B2_-_walk_to_stand_stageii": 1.0,
+             "B3_-_walk1_stageii": 1.0,
++            "B5_-_walk_backwards_stageii": 1.0,
++            "B9_-_walk_turn_left_90_stageii": 1.0,
++            "B10_-_walk_turn_left_45_stageii": 1.0,
++            "B11_-_walk_turn_left_135_stageii": 1.0,
++            "B12_-_walk_turn_right_90_stageii": 1.0,
++            "B13_-_walk_turn_right_45_stageii": 1.0,
++            "B14_-_walk_turn_right_135_stageii": 1.0,
+         }
+ 
+ 
+@@ -212,10 +224,10 @@ class G1AmpEnvCfg(LocomotionAmpEnvCfg):
+         # self.commands.base_velocity.ranges.lin_vel_x = (-0.5, 3.0)
+         # self.commands.base_velocity.ranges.lin_vel_y = (-0.5, 0.5)
+         # self.commands.base_velocity.ranges.ang_vel_z = (-1.0, 1.0)
+-        self.commands.base_velocity.ranges.lin_vel_x = (0.3, 1.0)
+-        self.commands.base_velocity.ranges.lin_vel_y = (0.0, 0.0)
+-        self.commands.base_velocity.ranges.ang_vel_z = (0.0, 0.0)
+-        self.commands.base_velocity.ranges.heading = (-math.pi, math.pi)
++        self.commands.base_velocity.ranges.lin_vel_x = (-0.5, 1.0)
++        self.commands.base_velocity.ranges.lin_vel_y = (-0.5, 0.5)
++        self.commands.base_velocity.ranges.ang_vel_z = (-1.0, 1.0)
++        # self.commands.base_velocity.ranges.heading = (-math.pi, math.pi)  # [MODIFIED] disabled: heading_command disabled
+ 
+         # ------------------------------------------------------
+         # Curriculum
+@@ -237,9 +249,12 @@ class G1AmpEnvCfg_PLAY(G1AmpEnvCfg):
+         self.scene.num_envs = 48
+         self.scene.env_spacing = 2.5
+ 
+-        self.commands.base_velocity.ranges.lin_vel_x = (0.5, 3.0)
++        # self.commands.base_velocity.ranges.lin_vel_x = (0.5, 3.0)
++        # self.commands.base_velocity.ranges.lin_vel_y = (-0.5, 0.5)
++        # self.commands.base_velocity.ranges.ang_vel_z = (-1.0, 1.0)
++        self.commands.base_velocity.ranges.lin_vel_x = (-0.5, 1.0)
+         self.commands.base_velocity.ranges.lin_vel_y = (-0.5, 0.5)
+         self.commands.base_velocity.ranges.ang_vel_z = (-1.0, 1.0)
+-        self.commands.base_velocity.ranges.heading = (0.0, 0.0)
++        # self.commands.base_velocity.ranges.heading = (0.0, 0.0)  # [MODIFIED] disabled: heading_command disabled
+ 
+-        self.events.reset_from_ref = None
++        self.events.reset_from_ref = None
+\ No newline at end of file
+diff --git a/amp2/legged_lab/source/legged_lab/legged_lab/tasks/locomotion/amp/mdp/symmetry/g1.py b/amp2/legged_lab/source/legged_lab/legged_lab/tasks/locomotion/amp/mdp/symmetry/g1.py
+index fd1faab..ef17307 100755
+--- a/amp2/legged_lab/source/legged_lab/legged_lab/tasks/locomotion/amp/mdp/symmetry/g1.py
++++ b/amp2/legged_lab/source/legged_lab/legged_lab/tasks/locomotion/amp/mdp/symmetry/g1.py
+@@ -95,12 +95,12 @@ def _transform_policy_obs_left_right(env: ManagerBasedRLEnv, obs: torch.Tensor)
+     # [(15,), (15,), (15,), (145,), (145,), (145,)]
+     HISTORY_LEN = 5
+     ANG_VEL_DIM = 3
+-    ROT_TAN_NORM = 6
++    PROJECTED_GRAVITY_DIM = 3  # was ROT_TAN_NORM = 6 for root_local_rot_tan_norm
+     VEL_CMD_DIM = 3
+     JOINT_POS_DIM = joint_num
+     JOINT_VEL_DIM = joint_num
+     LAST_ACTIONS_DIM = joint_num
+-    KEY_BODY_POS_DIM = key_body_num * 3
++    # KEY_BODY_POS_DIM = key_body_num * 3  # policy obs no longer has key_body_pos_b
+ 
+     end_idx = 0
+     # ang vel
+@@ -108,11 +108,11 @@ def _transform_policy_obs_left_right(env: ManagerBasedRLEnv, obs: torch.Tensor)
+         start_idx = end_idx
+         end_idx = start_idx + ANG_VEL_DIM
+         obs[:, start_idx:end_idx] = obs[:, start_idx:end_idx] * torch.tensor([-1, 1, -1], device=device)
+-    # root rot tan norm
++    # projected gravity (was root_local_rot_tan_norm with 6 dims)
+     for h in range(HISTORY_LEN):
+         start_idx = end_idx
+-        end_idx = start_idx + ROT_TAN_NORM
+-        obs[:, start_idx:end_idx] = obs[:, start_idx:end_idx] * torch.tensor([1, -1, 1, 1, -1, 1], device=device)
++        end_idx = start_idx + PROJECTED_GRAVITY_DIM
++        obs[:, start_idx:end_idx] = obs[:, start_idx:end_idx] * torch.tensor([1, -1, 1], device=device)
+     # velocity command
+     for h in range(HISTORY_LEN):
+         start_idx = end_idx
+@@ -133,11 +133,7 @@ def _transform_policy_obs_left_right(env: ManagerBasedRLEnv, obs: torch.Tensor)
+         start_idx = end_idx
+         end_idx = start_idx + LAST_ACTIONS_DIM
+         obs[:, start_idx:end_idx] = _switch_g1_29dof_joints_left_right(obs[:, start_idx:end_idx])
+-    # key body pos
+-    for h in range(HISTORY_LEN):
+-        start_idx = end_idx
+-        end_idx = start_idx + KEY_BODY_POS_DIM
+-        obs[:, start_idx:end_idx] = _switch_g1_29dof_key_body_pos_left_right(obs[:, start_idx:end_idx])
++    # key body pos (removed - policy obs no longer has key_body_pos_b)
+ 
+     return obs
+ 
