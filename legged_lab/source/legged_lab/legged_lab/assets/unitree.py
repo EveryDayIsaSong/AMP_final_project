@@ -145,8 +145,13 @@ UNITREE_G1_29DOF_CFG = UnitreeArticulationCfg(
             ],
             effort_limit_sim=25,
             velocity_limit_sim=37,
-            # [MODIFIED] waist pitch/roll stiffness 40→200, arm damping 1→10 (策略A配置，来自env.yaml)
+            # [MODIFIED] 策略A配置（来自env.yaml）：waist stiffness 40→200, arm damping 1→10
+            # 所有关节必须显式列出，否则未匹配的关节 stiffness=0！
             stiffness={
+                ".*_shoulder_.*": 40.0,
+                ".*_elbow_.*": 40.0,
+                ".*_wrist_roll.*": 40.0,
+                ".*_ankle_.*": 40.0,
                 "waist_roll_joint": 200.0,
                 "waist_pitch_joint": 200.0,
             },

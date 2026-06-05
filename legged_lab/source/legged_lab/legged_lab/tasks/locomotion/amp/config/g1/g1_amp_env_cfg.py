@@ -158,8 +158,10 @@ class G1AmpEnvCfg(LocomotionAmpEnvCfg):
             LEGGED_LAB_ROOT_DIR, "data", "MotionData", "g1_29dof", "amp", "model_walk"
         )
         self.motion_data.motion_dataset.motion_data_weights = {
+            "B1_-_stand_to_walk_stageii": 1.0,
+            # "B2_-_walk_to_stand_stageii": 1.0,
             "B3_-_walk1_stageii": 1.0,
-            "B5_-_walk_backwards_stageii": 1.0,
+            # "B5_-_walk_backwards_stageii": 1.0,
             "B9_-_walk_turn_left_90_stageii": 1.0,
             "B10_-_walk_turn_left_45_stageii": 1.0,
             "B11_-_walk_turn_left_135_stageii": 1.0,
