@@ -56,10 +56,10 @@ class G1RslRlOnPolicyRunnerAmpCfg(RslRlOnPolicyRunnerCfg):
             grad_penalty_scale=10.0,
             disc_trunk_weight_decay=1.0e-4,
             disc_linear_weight_decay=1.0e-2,
-            disc_learning_rate=1.0e-4,
+            disc_learning_rate=1.0e-5,  # [REVERTED 2026-06-06] 回退到600轮效果好的版本
             disc_max_grad_norm=1.0,
             amp_discriminator=RslRlAmpCfg.AMPDiscriminatorCfg(
-                hidden_dims=[1024, 512], activation="elu", style_reward_scale=5.0, task_style_lerp=0.3
+                hidden_dims=[1024, 512], activation="elu", style_reward_scale=5.0, task_style_lerp=0.3  # [REVERTED 2026-06-06] 回退到600轮效果好的版本
             ),
             loss_type="LSGAN",
         ),

@@ -2,6 +2,76 @@
 
 ---
 
+## 2026-06-06 修改：fine-tune 阶段参数调整（冻结 disc + 提高 style/task 权重）
+
+**原因**: disc_lr=1e-5 的训练结果：600 轮步态自然但不响应指令，2200 轮步态再次退化。降 disc_lr 解决了步态问题但没解决指令跟踪，且退化只是被推迟。决定从 600 轮权重 fine-tune，冻结 discriminator 防止退化，提高 style 代价防止跟踪指令时步态走形，提高 task 权重推动指令跟踪。
+
+**症状**: (1) 600轮时在mujoco里面的动作非常自然，可惜就是不会对手柄方向做出相应；(2) 2200轮时在isaacsim中就已经表现和之前一样，会前倾然后向后抬脚了，在mujoco里面也效果不好，且同样不能对手柄方向做出相应。
+
+### 文件1: `legged_lab/.../amp/config/g1/agents/rsl_rl_ppo_cfg.py`
+
+**修改1: 第 59 行 — 冻结 discriminator**
+
+```python
+# 修改前（disc_lr=1e-5，discriminator 仍在训练，最终会追上策略导致退化）:
+disc_learning_rate=1.0e-5,
+
+# 修改后（冻结 discriminator，fine-tune 阶段保持 style reward 稳定）:
+disc_learning_rate=0.0,
+```
+
+**修改2: 第 62 行 — 提高 style_reward_scale + task_style_lerp**
+
+```python
+# 修改前:
+style_reward_scale=5.0, task_style_lerp=0.3
+
+# 修改后（scale 5→20 让 style 变差的代价变大，防止跟踪指令时步态走形；lerp 0.3→0.5 提高指令跟踪权重）:
+style_reward_scale=20.0, task_style_lerp=0.5
+```
+
+### 文件2: `legged_lab/scripts/rsl_rl/train.py`
+
+**修改3: 第 251-254 行 — resume 后强制覆盖 disc lr**
+
+```python
+# 修改前（load 会从 checkpoint 恢复 disc lr=1e-5，覆盖 config 里的 0）:
+runner.load(resume_path)
+
+# 修改后（load 之后强制把 disc lr 重置为 config 的值，确保冻结生效）:
+runner.load(resume_path)
+if hasattr(runner.alg, "disc_optimizer"):
+    for pg in runner.alg.disc_optimizer.param_groups:
+        pg["lr"] = runner.alg.amp_cfg["disc_learning_rate"]
+```
+
+**详细分析**: 见 `history/training_analysis.md` → 2026-06-05_20-30-37 章节
+```
+
+**详细分析**: 见 `history/training_analysis.md` → 2026-06-05_20-30-37 章节
+
+---
+
+## 2026-06-05 修改：降低 discriminator 学习率（修复步态退化 + 指令不响应）
+
+**原因**: `disc_learning_rate=1e-4` 与策略学习率相同，但 discriminator 的任务（二分类）远比策略（高维连续控制）简单。相同学习率下 discriminator 进步远快于策略，导致 style reward 被压到接近零（disc_score ≈ -0.865，gap ≈ 1.73），AMP 失去约束步态的能力。
+
+**症状**: (1) 机器人在 MuJoCo 中不响应手柄指令，只会固定速度走；(2) 训练后期步态退化（身体前倾、脚后跟抬太高），早期（~1000步）步态反而更自然。
+
+**文件**: `legged_lab/source/legged_lab/legged_lab/tasks/locomotion/amp/config/g1/agents/rsl_rl_ppo_cfg.py` 第 59 行
+
+```python
+# 修复前（discriminator 学习率与策略相同，进步太快）:
+disc_learning_rate=1.0e-4,
+
+# 修复后（恢复 amp_cfg.py 默认值，给策略追赶的机会）:
+disc_learning_rate=1.0e-5,
+```
+
+**详细分析**: 见 `history/training_analysis.md` → 2026-06-05 章节
+
+---
+
 ## 2026-05-25 修改：修复 N5020-16 stiffness dict 缺失关节
 
 **原因**: stiffness dict 只写了 waist 两个关节，IsaacLab 对未匹配的关节赋 stiffness=0，导致 shoulder/elbow/wrist_roll/ankle 共 14 个关节完全无力，机器人无法站立。
